@@ -1,3 +1,6 @@
+find_package(Protobuf REQUIRED)
+PROTOBUF_GENERATE_CPP(PROTO_H PROTO_SRC sensoris.proto)
+
 set(microsim_devices_STAT_SRCS
    MSDevice.cpp
    MSDevice.h
@@ -23,6 +26,10 @@ set(microsim_devices_STAT_SRCS
    MSDevice_Battery.h
    MSDevice_Example.cpp
    MSDevice_Example.h
+   MSDevice_DBWriter.cpp
+   MSDevice_DBWriter.h
+   ${PROTO_SRC}
+   ${PROTO_H}
    MSDevice_Vehroutes.cpp
    MSDevice_Vehroutes.h
    MSDevice_Bluelight.cpp
@@ -38,4 +45,5 @@ set(microsim_devices_STAT_SRCS
 )
 
 add_library(microsim_devices STATIC ${microsim_devices_STAT_SRCS})
+target_link_libraries(microsim_devices ${PROTOBUF_LIBRARIES})
 set_property(TARGET microsim_devices PROPERTY PROJECT_LABEL "z_microsim_devices")

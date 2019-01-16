@@ -7,55 +7,80 @@
 // http://www.eclipse.org/legal/epl-v20.html
 // SPDX-License-Identifier: EPL-2.0
 /****************************************************************************/
-/// @file    MSDevice_Example.h
-/// @author  Daniel Krajzewicz
-/// @author  Jakob Erdmann
-/// @date    11.06.2013
-/// @version $Id$
+/// @file    MSDevice_DBWriter.h
+/// @author  Gretti N'guessan
+/// @date    17.12.2018
+/// @version 0
 ///
-// A device which stands as an implementation example and which outputs movereminder calls
+// A device which stands as an implementation dbwriter and which outputs movereminder calls
 /****************************************************************************/
-#ifndef MSDevice_Example_h
-#define MSDevice_Example_h
-
+#ifndef MSDevice_DBWriter_h
+#define MSDevice_DBWriter_h
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#include <iostream>
 #include <config.h>
+#include <list>
+#include <ctime>
 
 #include "MSVehicleDevice.h"
 #include <utils/common/SUMOTime.h>
 
+//#include "MQTTWrapper.h"
+
+//Sensoris includes
+#include <microsim/devices/sensoris/sensoris.pb.h>
+
+//Structure containing PositionEstimate information
+
+struct posInfo {
+    Position p;
+    double a;
+    SUMOTime t;
+    double s;
+    // std::time_t t;
+};
 
 // ===========================================================================
 // class declarations
 // ===========================================================================
 class SUMOVehicle;
 
-
 // ===========================================================================
 // class definitions
 // ===========================================================================
+
 /**
- * @class MSDevice_Example
+ * @class MSDevice_DBWriter
  * @brief A device which collects info on the vehicle trip (mainly on departure and arrival)
  *
  * Each device collects departure time, lane and speed and the same for arrival.
  *
  * @see MSDevice
  */
-class MSDevice_Example : public MSVehicleDevice {
+class MSDevice_DBWriter : public MSVehicleDevice {
 public:
-    /** @brief Inserts MSDevice_Example-options
+
+//    /**
+//     * @brief MQTTClient let us communicates with the MQTT server
+//     */
+//    MQTTWrapper *MQTTClient;
+
+    /**
+     * @brief Sensoris message
+     */
+    Message sensoris;
+
+    /** @brief Inserts MSDevice_DBWriter-options
      * @param[filled] oc The options container to add the options to
      */
-    static void insertOptions(OptionsCont& oc);
-
+    static void insertOptions(OptionsCont &oc);
 
     /** @brief Build devices for the given vehicle, if needed
      *
-     * The options are read and evaluated whether a example-device shall be built
+     * The options are read and evaluated whether a dbwriter-device shall be built
      *  for the given vehicle.
      *
      * The built device is stored in the given vector.
@@ -63,15 +88,11 @@ public:
      * @param[in] v The vehicle for which a device may be built
      * @param[filled] into The vector to store the built device in
      */
-    static void buildVehicleDevices(SUMOVehicle& v, std::vector<MSVehicleDevice*>& into);
-
-
+    static void buildVehicleDevices(SUMOVehicle &v, std::vector<MSVehicleDevice *> &into);
 
 public:
     /// @brief Destructor.
-    ~MSDevice_Example();
-
-
+    ~MSDevice_DBWriter();
 
     /// @name Methods called on vehicle movement / state change, overwriting MSDevice
     /// @{
@@ -85,9 +106,8 @@ public:
      *
      * @return True (always).
      */
-    bool notifyMove(SUMOVehicle& veh, double oldPos,
-                    double newPos, double newSpeed);
-
+    bool notifyMove(SUMOVehicle &veh, double oldPos,
+            double newPos, double newSpeed);
 
     /** @brief Saves departure info on insertion
      *
@@ -97,8 +117,7 @@ public:
      * @see MSMoveReminder::notifyEnter
      * @see MSMoveReminder::Notification
      */
-    bool notifyEnter(SUMOVehicle& veh, MSMoveReminder::Notification reason, const MSLane* enteredLane = 0);
-
+    bool notifyEnter(SUMOVehicle &veh, MSMoveReminder::Notification reason, const MSLane *enteredLane = 0);
 
     /** @brief Saves arrival info
      *
@@ -108,21 +127,21 @@ public:
      * @param[in] isLaneChange whether the vehicle changed from the lane
      * @return True if it did not leave the net.
      */
-    bool notifyLeave(SUMOVehicle& veh, double lastPos,
-                     MSMoveReminder::Notification reason, const MSLane* enteredLane = 0);
+    bool notifyLeave(SUMOVehicle &veh, double lastPos, MSMoveReminder::Notification reason, const MSLane *enteredLane = 0);
+
     /// @}
 
-
     /// @brief return the name for this type of device
+
     const std::string deviceName() const {
-        return "example";
+        return "sensoris";
     }
 
     /// @brief try to retrieve the given parameter from this device. Throw exception for unsupported key
-    std::string getParameter(const std::string& key) const;
+    std::string getParameter(const std::string &key) const;
 
     /// @brief try to set the given parameter for this device. Throw exception for unsupported key
-    void setParameter(const std::string& key, const std::string& value);
+    void setParameter(const std::string &key, const std::string &value);
 
     /** @brief Called on writing tripinfo output
      *
@@ -132,44 +151,46 @@ public:
      */
     void generateOutput() const;
 
-
-
 private:
     /** @brief Constructor
      *
      * @param[in] holder The vehicle that holds this device
      * @param[in] id The ID of the device
      */
-    MSDevice_Example(SUMOVehicle& holder, const std::string& id, double customValue1,
-                     double customValue2, double customValue3);
+    MSDevice_DBWriter(SUMOVehicle &holder, const std::string &id);
+//            ,const std::string& host, int port, bool using_credentials);
 
+    /// @brief compute trip length ///
+    void computeLength(double &routeLength) const;
 
+    /// @brief compute a sensoris snippet message ///
+    void computeSensoris(Message* sensoris) const;
+
+    /// @brief convert SUMO-positions to geo coordinates (in place)
+    static void toGeo(Position &x);
 
 private:
-    // private state members of the Example device
+    // private state members of the Database device
 
-    /// @brief a value which is initialised based on a commandline/configuration option
-    double myCustomValue1;
+    /// @brief snippet start timestamp
+    // std::time_t startTimestamp;
+    SUMOTime startTimestamp;
 
-    /// @brief a value which is initialised based on a vehicle parameter
-    double myCustomValue2;
-
-    /// @brief a value which is initialised based on a vType parameter
-    double myCustomValue3;
-
+    double cumLength = 0;
+    double lastLength = 0;
+    double lastLengthTrigger;
+    //  posInfo lastPos = NULL;
+    std::list<posInfo> positions;
+    posInfo lastPos;
 
 private:
     /// @brief Invalidated copy constructor.
-    MSDevice_Example(const MSDevice_Example&);
+    MSDevice_DBWriter(const MSDevice_DBWriter &);
 
     /// @brief Invalidated assignment operator.
-    MSDevice_Example& operator=(const MSDevice_Example&);
-
-
+    MSDevice_DBWriter &operator=(const MSDevice_DBWriter &);
 };
-
 
 #endif
 
 /****************************************************************************/
-

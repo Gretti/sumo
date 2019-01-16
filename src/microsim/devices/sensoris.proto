@@ -1,0 +1,704 @@
+syntax = "proto2";
+
+option java_package = "cloud.continental.sensoris";
+option java_outer_classname = "SensorisProto";
+
+message KeyValuePairString {
+    required string key = 1;
+    required string value = 2;
+}
+
+message Vector3D {
+    required double longitudinalValue = 1;
+    required double lateralValue = 2;
+    required double verticalValue = 3;
+    optional double longitudinalAccuracy = 4;
+    optional double lateralAccuary = 5;
+    optional double verticalAccuracy = 6;
+}
+message VehicleMetaData {
+    enum VehicleTypeGenericEnum {
+        BUS = 1;
+        DELIVERY_TRUCK = 2;
+        EMERGENCY_VEHICLE = 3;
+        MOTORCYCLE = 4;
+        PASSENGER_CAR = 5;
+        TAXI = 6;
+        TRANSPORT_TRUCK = 7;
+    }
+    optional VehicleTypeGenericEnum vehicleTypeGeneric = 1;
+    repeated KeyValuePairString vehicleSpecificMetaData = 2;
+    required double vehicleReferencePointDeltaAboveGround_m = 3;
+    optional double curvatureAccuracy_1pm = 4 [deprecated = true];
+    optional double slopeAccuracy_percent = 5 [deprecated = true];
+    optional double vehicleLength_m = 6;
+    optional double vehicleWidth_m = 7;
+    optional double vehicleHeight_m = 8;
+    enum FuelTypeEnum {
+        FUEL_TYPE_OTHER = 1;
+        FUEL_TYPE_GASOLINE_L = 2;
+        FUEL_TYPE_DIESEL_L = 3;
+        FUEL_TYPE_AUTOGAS_KG = 4;
+        FUEL_TYPE_BATTERY_AH = 5;
+        FUEL_TYPE_HYDROGEN_KG = 6;
+    }
+    optional double primaryFuelTankVolume = 9;
+    optional FuelTypeEnum primaryFuelType = 10;
+    optional double secondaryFuelTankVolume = 11;
+    optional FuelTypeEnum secondaryFuelType = 12;
+}
+
+message Envelope {
+    required string version = 1;
+    required string submitter = 2;
+    required VehicleMetaData vehicleMetaData = 3;
+    optional int64 transientVehicleID = 4;
+    optional int64 vehicleProfileID = 5;
+}
+
+message PositionEstimate {
+    required int64 timeStampUTC_ms = 1;
+    enum PositionTypeEnum {
+        RAW_GPS = 1;
+        FILTERED = 2;
+        MAP_MATCHED_REGULAR_MAP = 3;
+        MAP_MATCHED_HD_MAP = 4;
+        MAP_MATCHED_HD_MAP_LANE = 5;
+    }
+    required PositionTypeEnum positionType = 2;
+    optional bool interpolatedPoint = 3;
+    required double longitude_deg = 4;
+    required double latitude_deg = 5;
+    required double horizontalAccuracy_m = 6;
+    optional double altitude_m = 7;
+    optional double heading_deg = 8;
+    optional double speed_mps = 9;
+    optional double altitudeAccuracy_m = 10;
+    optional double headingAccuracy_deg = 11;
+    optional double speedAccuracy_mps = 12;
+    enum SpeedDetectionEnum {
+        SPEED_RAW_GPS = 1;
+        SPEED_WHEEL_TICKS = 2;
+        SPEED_RADAR_SONAR = 3;
+    }
+    optional SpeedDetectionEnum speedDetectionType = 13;
+    enum HeadingDetectionEnum {
+        HEADING_RAW_GPS = 1;
+        HEADING_MAGNETIC_SENSOR = 2;
+        HEADING_MULTI_SENSOR_FUSION = 3;
+        HEADING_BY_MAP = 4;
+    }
+    optional HeadingDetectionEnum headingDetectionType = 14;
+    optional Vector3D vehicleReferencedOrientationVector_deg = 15;
+    optional int32 currentLaneEstimate = 16;
+}
+
+message PathSegment {
+    repeated PositionEstimate positionEstimate = 1;
+}
+
+message Path {
+    repeated PositionEstimate positionEstimate = 1;
+    repeated PathSegment positionSegments = 2 [deprecated = true];
+}
+
+enum WheelReferenceBitfield // Bitwise OR of WheelReferenceBitfield values
+{
+    frontAxleLeft = 0x1;
+    frontAxleRight = 0x2;
+    rearAxleLeft = 0x4;
+    rearAxleRight = 0x8;
+}
+
+message VehicleStatus {
+    required int64 timeStampUTC_ms = 1;
+    enum TransmissionModeEnum {
+        PARK = 1;
+        COASTING = 2;
+        DRIVE = 3;
+        REVERSE = 4;
+    }
+    optional TransmissionModeEnum transmissionMode = 2;
+    enum LightStateBitfield {
+        LOWBEAMS = 0x0001;
+        HIGHBEAMS = 0x0002;
+        FOGLAMP_FRONT = 0x0004;
+        FOGLAMP_REAR = 0x0008;
+        HAZARD = 0x0010;
+        LEFT_TURN = 0x0020;
+        RIGHT_TURN = 0x0040;
+    }
+    optional int64 lightStateBitfield = 3; // Bitwise OR of LightStateBitfield values
+    enum WiperStateEnum {
+        WIPING_OFF = 1;
+        WIPING_SLOW = 2;
+        WIPING_MEDIUM = 3;
+        WIPING_FAST = 4;
+        WIPING_INTERVALL = 5;
+    }
+    optional WiperStateEnum wiperState = 4;
+    optional double temperatureExternal_cel = 5 [deprecated = true];
+    optional int32 wiperSpeed_wpm = 6;
+    optional int64 driveWheelReference = 7;
+    optional double chassisClearance_m = 8;
+    optional double mileage_km = 9;
+    optional double primaryFuelState = 10;
+    optional double primaryFuelStateAccuracy = 11;
+    optional double estimatedPrimaryRange_km = 12;
+    optional double secondaryFuelState = 13;
+    optional double secondaryFuelStateAccuracy = 14;
+    optional double estimatedSecondaryRange_km = 15;
+    enum MaintenanceLightStateBitfield {
+        WARNING_ENGINE_CONTROL = 0x0001;
+        WARNING_OIL_PRESSURE = 0x0002;
+        WARNING_COOLANT_TEMP = 0x0004;
+        WARNING_VEHICLE_SERVICE = 0x0008;
+        WARNING_BATTERY_CHARGING = 0x0010;
+        WARNING_TIRE_PRESSURE = 0x0020;
+        WARNING_LAMP_OUT = 0x0040;
+        WARNING_OTHER_HIGH_PRIO = 0x0080;
+        WARNING_OTHER_LOW_PRIO = 0x0100;
+    }
+    optional MaintenanceLightStateBitfield maintenanceLightState = 16;
+}
+
+message VehicleDynamics {
+    required int64 timeStampUTC_ms = 1;
+    optional double curvature_1pm = 2;
+    optional double slope_percent = 3;
+    optional double curvatureAccuracy_1pm = 4;
+    optional double slopeAccuracy_percent = 5;
+    optional int32 averageSuspensionTravel_mm = 6;
+    optional Vector3D averageAccelerationVector_mps2 = 7;
+    optional Vector3D averageRotationRateVector_omega = 8;
+    // Start proprietary extensions
+    optional Vector3D averageSpeedVector_mps = 1000; // average speed between actual and last position
+    optional Vector3D relativePositionVector_m = 1001; // relative position to previous measurement
+}
+
+message PositionOffset {
+    optional double lateralOffset_m = 1;
+    enum LateralOffsetSimpleEnum {
+        LEFT = 1;
+        MIDDLE = 2;
+        RIGHT = 3;
+    }
+    optional LateralOffsetSimpleEnum lateralOffsetSimple = 2;
+    optional double longitudinalOffset_m = 3;
+    enum LongitudinalOffsetSimpleEnum {
+        FRONT = 1;
+        CENTER = 2;
+        BACK = 3;
+    }
+    optional LongitudinalOffsetSimpleEnum longitudinalOffsetSimple = 4;
+    optional double verticalOffset_m = 5;
+    enum VerticalOffsetSimpleEnum {
+        ABOVE = 1;
+        AT_LEVEL = 2;
+        BELOW = 3;
+    }
+    optional VerticalOffsetSimpleEnum verticalOffsetSimple = 6;
+    optional double lateralOffsetAccuracy_m = 7;
+    optional double longitudinalOffsetAccuracy_m = 8;
+    optional double verticalOffsetAccuracy_m = 9;
+}
+
+message RoadSignRestriction {
+  enum RestrictionType {
+    // Dependencies
+    RAIN = 1;
+    SNOW = 2;
+    TIME = 3;
+    SEASON = 4;
+    FOG = 5;
+    SCHOOL = 6;
+    TRUCKS = 7;
+    TRAILER = 8;
+    // Validities
+    STARTING_IN = 101;
+    VALID_FOR = 102;
+    IN_RIGHT_DIRECTION = 103;
+    IN_LEFT_DIRECTION = 104;
+    ZONE = 105;
+    // Start proprietary extensions
+    ANY_PICTURE = 1000;
+    ANY_TEXT = 1001;
+    ANY_RESTRICTION = 1002;
+    GARBAGE = 1003;
+    NIGHT = 1004;
+    WORKDAYS = 1005;
+    WORKDAYS_AND_TIME = 1006;
+    MON2FRI_AND_TIME = 1007;
+    MOTORCYCLE = 1008;
+    PASSENGER_CAR_TRAILER = 1009;
+    TRACTORS_MAY_BE_PASSED = 1010;
+    TRUCK_BUS_CAR_TRAILER = 1011;
+    WEIGHT = 1012;
+    WET = 1013;
+    ICY = 1014;
+    X_WAY = 1015;
+    PASSENGER_CAR = 1016;
+    UNKNOWN_RESTRICTION = 9999;
+  }
+  required RestrictionType restrictionType = 1;
+  optional string restrictionValue = 2;
+  optional uint32 restrictionConfidence_percent = 3;
+}
+
+message SignRecognition {
+    required int64 timeStampUTC_ms = 1;
+    optional PositionOffset positionOffset = 2;
+    enum RoadSignTypeEnum {
+        SPEED_LIMIT_START = 1;
+        SPEED_LIMIT_END = 2;
+        NO_OVERTAKING_PASSENGER_CARS_START = 3;
+        NO_OVERTAKING_PASSENGER_CARS_END = 4;
+        NO_OVERTAKING_TRUCKS_START = 5;
+        NO_OVERTAKING_TRUCKS_END = 6;
+        ALL_RESTRICTIONS_END = 7;
+        CITY_START = 8;
+        CITY_END = 9;
+        MOTORWAY_START = 10;
+        MOTORWAY_END = 11;
+        CONSTRUCTION_START = 12;
+        CONSTRUCTION_END = 13;
+        PROTECTED_OVERTAKING_EXTRALANE = 14;
+        PROTECTED_OVERTAKING_EXTRALANE_RIGHTSIDE = 15;
+        PROTECTED_OVERTAKING_EXTRALANE_LEFTSIDE = 16;
+        LANE_MERGE_RIGHT = 17;
+        LANE_MERGE_LEFT = 18;
+        LANE_MERGE_CENTER = 19;
+        RAILWAY_CROSSING_PROTECTED = 20;
+        RAILWAY_CROSSING_UNPROTECTED = 21;
+        ROAD_NARROWS = 22;
+        SHARP_CURVE = 23;
+        SHARP_CURVE_LEFT = 24;
+        SHARP_CURVE_RIGHT = 25;
+        WINDING_ROAD_STARTING_LEFT = 26;
+        WINDING_ROAD_STARTING_RIGHT = 27;
+        STEEP_HILL = 28;
+        STEEP_HILL_UPWARDS = 29;
+        STEEP_HILL_DOWNWARDS = 30;
+        STOP_SIGN = 31;
+        LATERAL_WIND = 32;
+        GENERAL_WARNING = 33;
+        RISK_OF_GROUNDING = 34;
+        ANIMAL_CROSSING = 35;
+        ICY_CONDITIONS = 36;
+        SLIPPERY_ROAD = 37;
+        FALLING_ROCKS = 38;
+        SCHOOL_ZONE = 39;
+        TRAMWAY_CROSSING = 40;
+        CONGESTION_HAZARD = 41;
+        ACCIDENT_HAZARD = 42;
+        PRIORITY_OVER_ONCOMING_TRAFFIC = 43;
+        YIELD_TO_ONCOMING_TRAFFIC = 44;
+        PREFERENCE_ROAD_START = 45;
+        PREFERENCE_ROAD_END = 46;
+        // Start proprietary extensions
+        ENVIRONMENTAL_ZONE_START = 1000;
+        ENVIRONMENTAL_ZONE_END = 1001;
+        RESIDENTIAL_AREA_START = 1002;
+        RESIDENTIAL_AREA_END = 1003;
+        HIGHWAY_START = 1004;
+        HIGHWAY_END = 1005;
+        ZONE_START = 1006;
+        ZONE_END = 1007;
+        ROUNDABOUT = 1008;
+        PASS_THIS_SIDE_RIGHT = 1009;
+        PASS_THIS_SIDE_LEFT = 1010;
+        NO_ENTRY = 1011;
+        ENVIRONMENTAL_ZONE_GREEN_START = 1012;
+        // 1013
+        UNEVEN_ROAD = 1014;
+        // 1015
+        GENERAL_PRIORITIES_RULE = 1016;
+        DANGER_NARROW_ROAD = 1017;
+        DANGER_CHILDREN = 1018;
+        DANGER_PEDESTRIANS = 1019;
+        DANGER_CYCLIST = 1020;
+        // 1021
+        ROAD_NARROWS_LEFT = 1022;
+        ROAD_NARROWS_RIGHT = 1023;
+        GRAVEL = 1100;
+        CONTRAFLOW_TRAFFIC = 1101;
+        DRAWBRIDGE = 1102;
+        QUAYWALL = 1103;
+        TRAFFICLIGHT = 1104;
+        ZEBRA_CROSSING_HAZARD = 1105;
+        CATTLE_CROSSING = 1106;
+        PLANES_CROSSING = 1107;
+        BUS_CROSSING = 1108;
+        PRECEDENCE_FOR_CONTRAFLOW_TRAFFIC = 1109;
+        TURN_LEFT = 1110;
+        TURN_RIGHT = 1111;
+        NO_TURN = 1112;
+        TURN_LEFT_OR_RIGHT = 1113;
+        DRIVE_LEFT = 1114;
+        DRIVE_RIGHT = 1115;
+        NO_TURN_RIGHT = 1116;
+        NO_TURN_LEFT = 1117;
+        ONEWAY_LEFT = 1118;
+        ONEWAY_RIGHT = 1119;
+        BUSSTOP = 1120;
+        BICYCLE_LANE = 1121;
+        HORSERIDING_LANE = 1122;
+        PEDESTRIAN_LANE = 1123;
+        PEDESTRIAN_AND_BICYCLE_LANE = 1124;
+        BICYCLE_BESIDES_PEDESTRIAN_LANE = 1125;
+        PEDESTRIAN_BESIDES_BICYCLE_LANE = 1126;
+        PEDESTRIAN_ZONE_START = 1127;
+        PEDESTRIAN_ZONE_END = 1128;
+        BICYCLE_ZONE_START = 1129;
+        BICYCLE_ZONE_END = 1130;
+        NO_PARKING_ZONE_START = 1131;
+        NO_PARKING_ZONE_END = 1132;
+        BUS_LANE = 1133;
+        NO_MOTORVEHICLES = 1134;
+        NO_TRUCKS = 1135;
+        NO_BICYCLE = 1136;
+        NO_MOTORCYCLE = 1137;
+        NO_SCOOTER = 1138;
+        NO_HORSERIDING = 1139;
+        NO_PEDESTRIANS = 1140;
+        NO_MOTORVEHICLES_AND_MOTORCYCLE = 1141;
+        NO_DANGEROUSGOODS = 1142;
+        RESTRICTED_WEIGHT = 1143;
+        RESTRICTED_AXLE_WEIGHT = 1144;
+        RESTRICTED_WIDTH = 1145;
+        RESTRICTED_HEIGHT = 1146;
+        RESTRICTED_LENGTH = 1147;
+        SNOW_CHAINS_MANDATORY = 1148;
+        NO_WATER_HAZARDOUS_GOODS = 1149;
+        NO_UTURN = 1150;
+        PROHIBITED_MINIMUM_GAP_DECEED = 1151;
+        MANDATORY_MINIMUM_SPEED_START = 1152;
+        MANDATORY_MINIMUM_SPEED_END = 1153;
+        NO_STOPPING_TO_LEFT = 1154;
+        NO_STOPPING_TO_RIGHT = 1155;
+        NO_STOPPING_TO_BOTH = 1156;
+        NO_STOPPING = 1157;
+        NO_PARKING_TO_LEFT = 1158;
+        NO_PARKING_TO_RIGHT = 1159;
+        NO_PARKING_TO_BOTH = 1160;
+        NO_PARKING = 1161;
+        PRIORITY_OVER_CONTRAFLOW_TRAFFIC = 1162;
+        ZEBRA_CROSSING = 1163;
+        HAF_RIGHT = 1164;
+        HAF_LEFT = 1165;
+        ROADMARK_ARROW_STRAIGHT = 1200;
+        ROADMARK_ARROW_LEFT = 1201;
+        ROADMARK_ARROW_RIGHT = 1202;
+        ROADMARK_ARROW_STRAIGHTLEFT = 1203;
+        ROADMARK_ARROW_STRAIGHTRIGHT = 1204;
+        ROADMARK_ARROW_LEFTRIGHT = 1205;
+        ROADMARK_ARROW_MERGELEFT = 1206;
+        ROADMARK_ARROW_MERGERIGHT = 1207;
+        UNKNOWN_SIGN = 9999;
+    }
+    required RoadSignTypeEnum roadSignType = 3;
+    enum RoadSignPermanencyEnum {
+        STATIC = 1;
+        VARIABLE = 2;
+    }
+    optional RoadSignPermanencyEnum roadSignPermanency = 4;
+    optional string roadSignValue = 5;
+    enum RoadSignDependenciesEnum {
+        RAIN = 1;
+        SNOW = 2;
+        TIME = 3;
+        SEASON = 4;
+        FOG = 5;
+        SCHOOL = 6;
+        TRUCKS = 7;
+        TRAILER = 8;
+        // Start proprietary extensions
+        ANY_PICTURE = 1000;
+        ANY_TEXT = 1001;
+        ANY_RESTRICTION = 1002;
+        GARBAGE = 1003;
+        NIGHT = 1004;
+        WORKDAYS = 1005;
+        WORKDAYS_AND_TIME = 1006;
+        MON2FRI_AND_TIME = 1007;
+        MOTORCYCLE = 1008;
+        PASSENGER_CAR_TRAILER = 1009;
+        TRACTORS_MAY_BE_PASSED = 1010;
+        TRUCK_BUS_CAR_TRAILER = 1011;
+        WEIGHT = 1012;
+        WET = 1013;
+        ICY = 1014;
+        X_WAY = 1015;
+        PASSENGER_CAR = 1016;
+        UNKNOWN_DEPENDENCY = 9999;
+    }
+    optional RoadSignDependenciesEnum roadSignDependencies = 6;
+    enum RoadSignValidityEnum {
+        STARTING_IN = 1;
+        VALID_FOR = 2;
+        IN_RIGHT_DIRECTION = 3;
+        IN_LEFT_DIRECTION = 4;
+        ZONE = 5;
+        UNKNOWN_VALIDITY = 9999;
+    }
+    optional RoadSignValidityEnum roadSignValidity = 7;
+    optional string roadSignValidityValue = 8;
+    enum RoadSignRecognitionTypeEnum {
+        SIGN_DETECTED = 1;
+        SIGN_NOT_DETECTED = 2;
+    }
+    optional RoadSignRecognitionTypeEnum roadSignRecognitionType = 9;
+    optional int64 detectedObjectID = 10;
+    optional int64 mediaID = 11;
+    optional uint32 roadSignRecognitionConfidence_percent = 12;
+    repeated RoadSignRestriction roadSignRestrictions = 1001;
+}
+
+message LinePoint {
+    required PositionOffset positionOffset = 1;
+    enum LinePointTypeEnum {
+        START = 1;
+        END = 2;
+        MIDDLE = 3;
+    }
+    optional LinePointTypeEnum linePointType = 2;
+}
+
+message LaneBoundaryRecognition {
+    required int64 timeStampUTC_ms = 1;
+    required PositionOffset positionOffset = 2;
+    enum LaneBoundaryTypeEnum {
+        SINGLE_SOLID_PAINT = 1;
+        DOUBLE_SOLID_PAINT = 2;
+        LONG_DASHED_PAINT = 3;
+        SHORT_DASHED_PAINT = 4;
+        SHADED_AREA_PAINT = 5;
+        DASHED_BLOCKS = 6;
+        DOUBLE_LINE_DASHED_SOLID_PAINT = 7;
+        DOUBLE_LINE_SOLID_DASHED_PAINT = 8;
+        PHYSICAL_DIVIDER = 9;
+        DOUBLE_DASHED_LINES = 10;
+        // Additional types to be defined later
+    }
+    optional LaneBoundaryTypeEnum laneBoundaryType = 3;
+    enum LaneBoundaryColorEnum {
+        WHITE = 1;
+        YELLOW = 2;
+        BLUE = 3; //in some countries used as reflectors on bridge (icying conditions)
+        // Additional colors to be defined later
+    }
+    optional LaneBoundaryColorEnum laneBoundaryColor = 4;
+    optional double curvature_1pm = 5;
+    optional int32 laneMarkerWidth_mm = 6;
+    optional int32 laneMarkerWidthAccuracy_mm = 7;
+    optional double laneDeclination_deg = 8;
+    optional double laneDeclinationAccuracy_deg = 9;
+    optional int32 laneBoundaryTypeConfidence_percent = 10;
+    // Start proprietary extensions
+    repeated LinePoint linePoint = 1000;
+    optional Vector3D LM_Orientation = 1001;
+}
+
+message TireSlippageEvent {
+    //[ deprecated = true ]
+}
+
+message CrashDetectedEvent {
+    optional bool vehicleIsDrivable = 1;
+    optional bool airbagsDeployed = 2;
+    optional bool eCallActivated = 3;
+    optional bool vehicleIsObstacleOnRoad = 4;
+    optional Vector3D maxAccelerationVector_mps2 = 5;
+}
+
+message EmergencyBrakingEvent {
+    optional Vector3D maxAccelerationVector_mps2 = 1;
+}
+
+message DynamicStabilityControlEvent {
+    // To be defined later
+}
+message AntiLockBrakingSystemEvent {
+    //  [deprecated = true]
+}
+
+message ElectronicStabilityControlEvent {
+    optional bool antiSlipActionEvent = 1;
+    optional bool antiLockActionEvent = 2;
+    optional bool electronicStabilityControlEvent = 3;
+    optional Vector3D requestedAccelerationVector_mps2 = 4;
+    optional Vector3D requestedRotationRateVector_omega = 5;
+}
+message ExceptionalVehicleState {
+    required int64 timeStampUTC_ms = 1;
+    optional TireSlippageEvent tireSlippage = 2 [deprecated = true];
+    optional CrashDetectedEvent crashDetected = 3;
+    optional EmergencyBrakingEvent emergencyBraking = 4;
+    optional DynamicStabilityControlEvent dynamicStabilityControl = 5 [deprecated = true];
+    optional AntiLockBrakingSystemEvent antiLockBrakingSystem = 6 [deprecated = true];
+    optional ElectronicStabilityControlEvent electronicStabilityControl = 7;
+}
+
+message ProprietaryInfo {
+    required int64 timeStampUTC_ms = 1;
+    repeated KeyValuePairString keyValuePairs = 2;
+}
+
+message EnvironmentStatus {
+    required int64 timeStampUTC_ms = 1;
+    enum LightConditionsEnum {
+        GENERAL_DAYLIGHT = 1;
+        GENERAL_DARK = 2;
+        DAYLIGHT_SUN = 3;
+        DAYLIGHT_CLOUD = 4;
+        DUSK_OR_DAWN = 5;
+        NIGHT_LUMINATED = 6;
+        NIGHT_DARK = 7;
+    }
+    optional LightConditionsEnum lightConditions = 2;
+    optional double externalAirTemperature_DegC = 3;
+    optional double externalAirTemperatureAccuracy_DegC = 4;
+    enum PrecipitationEnum {
+        NONE = 1;
+        RAIN = 2;
+        HAIL = 3;
+        SNOW = 4;
+    }
+    optional PrecipitationEnum precipitation = 5;
+    optional double visibleDistance_m = 6;
+    optional double roadSurfaceTemperature_DegC = 7;
+    optional double roadSurfaceTemperatureAccuracy_DegC = 8;
+    enum RoadSurfaceTypeEnum {
+        ASPHALT = 1;
+        CONCRETE = 2;
+        PAVED = 3;
+        GRAVEL = 4;
+        ICEORSNOW = 5;
+        UNKNOWN = 6;
+    }
+    optional RoadSurfaceTypeEnum roadSurfaceType = 9;
+}
+
+message TrafficLightStatus {
+    enum LightStatus {
+        OFF = 1;
+        ON = 2;
+        BLINKING = 3;
+    }
+    optional LightStatus green = 1;
+    optional LightStatus yellow = 2;
+    optional LightStatus red = 3;
+    optional LightStatus other = 4;
+}
+
+message ObjectDetection {
+    enum ObjectTypeEnum {
+        MOVING_GENERAL = 1;
+        STATIC_GENERAL = 2;
+        STATIC_GENERAL_VERTICAL = 3;
+        STATIC_GENERAL_TRANSVERSAL = 4;
+        STATIC_GENERAL_LATERAL = 5;
+        MOVING_VEHICLE = 6;
+        MOVING_TRUCK = 7;
+        MOVING_BIKE = 8;
+        MOVING_PERSON = 9;
+        STATIC_BRIDGE = 10;
+        STATIC_TUNNEL = 11;
+        STATIC_POLE = 12;
+        STATIC_BAR = 13;
+        STATIC_TREE = 14;
+        STATIC_WALL = 15;
+        STATIC_BOLLARD = 16;
+        STATIC_GUIDERAIL = 17;
+        STATIC_TRAFFICISLAND = 18;
+        STATIC_SIGN = 19;
+        STATIC_TRAFFIC_LIGHT = 20;
+    }
+    required int64 timeStampUTC_ms = 1;
+    optional int64 detectedObjectID = 2;
+    optional PositionOffset positionOffset = 3;
+    optional Vector3D movingVector_mps = 4;
+    optional ObjectTypeEnum objectType = 5;
+    optional Vector3D objectSizeVector_m = 6;
+    optional Vector3D objectSizeAccuracyVector_m = 7;
+    optional int64 mediaID = 8;
+    // Start proprietary extensions
+    optional TrafficLightStatus trafficLightStatus = 1000;
+    optional uint32 objectDetectionConfidence_percent = 1001;
+}
+
+message ADServiceAndSensorState {
+    required int64 timeStampUTC_ms = 1;
+    optional bool adSpeedControl = 2;
+    optional bool adBrakeControl = 3;
+    optional bool adSteeringControl = 4;
+    optional bool adConnectionAvailable = 5;
+    optional bool sensorObjectRecognition = 6;
+    optional bool sensorSignRecognition = 7;
+    optional bool sensorLaneRecognition = 8;
+    optional bool sensorRoadSurface = 9;
+    optional bool sensorEnvironment = 10;
+}
+
+message EgoMotion {
+    required int64 timeStampUTC_ms = 1;
+    optional int64 egoMotionVariant = 2; // field to identify e.g. the algorithm variant or version,
+    // with which the egomotion has been detected
+    optional PositionOffset egoPosition = 3; // x y z
+    optional Vector3D egoOrientation = 4; // Yaw Pitch Roll
+    optional int64 mediaID = 8;
+}
+
+message RawGNSSSatData {
+    required int64 timeStampUTC_ms = 1;
+    enum RawGNSSSatDataType {
+        RINEX = 1;
+    }
+    required RawGNSSSatDataType rawGNSSSatDataType = 2;
+    optional bytes rawData = 3;
+}
+
+message PathEvents {
+    repeated VehicleStatus vehicleStatus = 1;
+    repeated VehicleDynamics vehicleDynamics = 2;
+    repeated SignRecognition signRecognition = 3;
+    repeated LaneBoundaryRecognition laneBoundaryRecognition = 4;
+    repeated ExceptionalVehicleState exceptionalVehicleState = 5;
+    repeated ProprietaryInfo proprietaryInfo = 6;
+    repeated EnvironmentStatus environmentStatus = 7;
+    repeated ObjectDetection objectDetection = 8;
+    repeated ADServiceAndSensorState adServiceAndSensorState = 9;
+    // Start proprietary extensions
+    repeated EgoMotion egoMotion = 1000;
+    repeated RawGNSSSatData rawGNSSSatData = 1001;
+}
+
+message MediaContainer {
+    enum MediaTypeEnum {
+        OTHER = 1;
+        IMAGE = 2;
+        VIDEO = 3;
+        AUDIO = 4;
+    }
+    required int64 timeStampUTC_ms = 1;
+    required MediaTypeEnum mediaType = 2;
+    required string mediaFormat = 3;
+    required bytes mediaContent = 4;
+    optional int64 mediaID = 5;
+    optional PositionOffset sensorOffset = 6;
+    optional Vector3D sensorDirection = 7;
+    optional int32 duration_s = 8;
+    optional double verticalViewingAngle_deg = 9;
+    optional double horizontalViewingAngle_deg = 10;
+}
+
+message PathMedia {
+    repeated MediaContainer mediaContainer = 1;
+}
+
+message Message {
+    required Envelope envelope = 1;
+    required Path path = 2;
+    optional PathEvents pathEvents = 3;
+    optional PathMedia pathMedia = 4;
+}

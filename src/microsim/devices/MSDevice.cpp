@@ -34,6 +34,7 @@
 #include "MSDevice_BTreceiver.h"
 #include "MSDevice_BTsender.h"
 #include "MSDevice_Example.h"
+#include "MSDevice_DBWriter.h"
 #include "MSDevice_Battery.h"
 #include "MSDevice_SSM.h"
 #include "MSDevice_ToC.h"
@@ -69,6 +70,7 @@ MSDevice::insertOptions(OptionsCont& oc) {
     MSDevice_BTreceiver::insertOptions(oc);
     MSDevice_BTsender::insertOptions(oc);
     MSDevice_Example::insertOptions(oc);
+    MSDevice_DBWriter::insertOptions(oc);
     MSDevice_Battery::insertOptions(oc);
     MSDevice_SSM::insertOptions(oc);
     MSDevice_ToC::insertOptions(oc);
@@ -95,6 +97,7 @@ MSDevice::buildVehicleDevices(SUMOVehicle& v, std::vector<MSVehicleDevice*>& int
     MSDevice_BTreceiver::buildVehicleDevices(v, into);
     MSDevice_BTsender::buildVehicleDevices(v, into);
     MSDevice_Example::buildVehicleDevices(v, into);
+    MSDevice_DBWriter::buildVehicleDevices(v, into);
     MSDevice_Battery::buildVehicleDevices(v, into);
     MSDevice_SSM::buildVehicleDevices(v, into);
     MSDevice_ToC::buildVehicleDevices(v, into);
