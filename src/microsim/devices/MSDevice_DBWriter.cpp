@@ -39,6 +39,9 @@
 #include <google/protobuf/message.h>
 #include <google/protobuf/text_format.h>
 
+// SQLite3 include
+//#include <sqlite3.h>
+
 // ===========================================================================
 // method definitions
 // ===========================================================================
@@ -51,20 +54,6 @@
 void MSDevice_DBWriter::insertOptions(OptionsCont &oc) {
     oc.addOptionSubTopic("Sensoris Builder Device");
     insertDefaultAssignmentOptions("sensoris", "Sensoris Builder Device", oc);
-
-//    oc.doRegister("device.mqtt.host", new Option_String("127.0.0.1"));
-//    oc.addDescription("device.mqtt.host", "MQTT Device", "The MQTT server hostname");
-//
-//    oc.doRegister("device.mqtt.port", new Option_Integer(1883));
-//    oc.addDescription("device.mqtt.port", "MQTT Device", "The MQTT server port");
-//
-//    oc.doRegister("device.mqtt.webmercator2latlon", new Option_Bool(false));
-//    oc.addDescription("device.mqtt.webmercator2latlon", "MQTT Device", \
-//    "If road network geocoordinates are provided in Web Mercator, convert to WGS84 lat/lon");
-//
-//    oc.doRegister("device.mqtt.using_credentials", new Option_Bool(false));
-//    oc.addDescription("device.mqtt.using_credentials", "MQTT Device", \
-//    "Connect with user-provided credentials. Will look for 'rootca.pem' (root certificate authority), 'device.pem' (device certificate) and 'device.key' (device private key) in the folder '/opt/sumo/credentials/'");
 }
 
 void MSDevice_DBWriter::buildVehicleDevices(SUMOVehicle &v, std::vector<MSVehicleDevice *> &into) {
@@ -72,9 +61,6 @@ void MSDevice_DBWriter::buildVehicleDevices(SUMOVehicle &v, std::vector<MSVehicl
     if (equippedByDefaultAssignmentOptions(oc, "sensoris", v, false)) {
         // build the device
         MSDevice_DBWriter *device = new MSDevice_DBWriter(v, "sumo_" + v.getID());
-//                ,oc.getString("device.mqtt.host")
-//                ,oc.getInt("device.mqtt.port")
-//                ,oc.getBool("device.mqtt.using_credentials"));
         into.push_back(device);
     }
 }
@@ -84,21 +70,20 @@ void MSDevice_DBWriter::buildVehicleDevices(SUMOVehicle &v, std::vector<MSVehicl
 // ---------------------------------------------------------------------------
 
 MSDevice_DBWriter::MSDevice_DBWriter(SUMOVehicle &holder, const std::string &id) : MSVehicleDevice(holder, id) {
-//    // Init the MQTT server
-//    MQTTClient = &MQTTWrapper::Instance();
-//    MQTTClient->init(id, host, port, using_credentials);
-
     // Fill Sensoris invariant fields
     sensoris.mutable_envelope()->set_version("2.0.2.3");
     sensoris.mutable_envelope()->mutable_vehiclemetadata()->set_vehicletypegeneric(::VehicleMetaData_VehicleTypeGenericEnum_PASSENGER_CAR);
     sensoris.mutable_envelope()->mutable_vehiclemetadata()->set_vehiclereferencepointdeltaaboveground_m(0.5);
     sensoris.mutable_envelope()->set_submitter(getID());
 
+    //Open SQLite DB to write data in
+//    sqlite3_open(":memory:", &_db);
+
     std::cout << "initialized device '" << id << "'\n";
 }
 
 MSDevice_DBWriter::~MSDevice_DBWriter() {
-//    MQTTClient->deinit();
+//    sqlite3_close(_db);
 }
 
 void MSDevice_DBWriter::computeLength(double &routeLength) const {
@@ -140,19 +125,12 @@ void MSDevice_DBWriter::computeSensoris(Message* sensoris) const {
         // Serialize to protobuf
         std::string bin_output;
         sensoris->SerializeToString(&bin_output);
-
-        //:::DEBUG:::
-        // std::string plain_text;
-        // google::protobuf::TextFormat::PrintToString(sensoris, &plain_text);
-        // std::cout << plain_text << std::endl;
-        //:::END DEBUG:::
     }
 }
 
 bool MSDevice_DBWriter::notifyEnter(SUMOVehicle &veh, MSMoveReminder::Notification reason, const MSLane * /* enteredLane */) {
     // Subscribe the client to the vehicle's topic when entering the network
     if (reason == MSMoveReminder::NOTIFICATION_DEPARTED) {
-//        MQTTClient->do_subscribe(veh.getID());
         // startTimestamp = std::time(nullptr);
         startTimestamp = MSNet::getInstance()->getCurrentTimeStep();
         // std::cout << "device '" << getID() << "' notifyEnter: reason=" << reason << " startTime=" << std::asctime(std::localtime(&startTimestamp)) << "\n";
@@ -164,6 +142,8 @@ bool MSDevice_DBWriter::notifyLeave(SUMOVehicle &veh, double /*lastPos*/, MSMove
     if (reason >= MSMoveReminder::NOTIFICATION_ARRIVED && positions.size() > 1) {
         computeSensoris(&sensoris);
     }
+    //Close SQLite connexion
+
     return true; // keep the device
 }
 
@@ -196,13 +176,13 @@ bool MSDevice_DBWriter::notifyMove(SUMOVehicle &veh, double /*oldPos*/, double /
 
         //Cycle through position list to build Sensoris positions
         computeSensoris(&sensoris);
-        //:::DEBUG:::
+        /*//:::DEBUG:::
         if (getID() == "sumo_veh274") {
             std::string plain_text;
             google::protobuf::TextFormat::PrintToString(sensoris, &plain_text);
             std::cout << plain_text << std::endl;
         }
-        //:::END DEBUG:::
+        //:::END DEBUG:::*/
         // Serialize to protobuf
         std::string bin_output;
         sensoris.SerializeToString(&bin_output);

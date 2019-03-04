@@ -33,6 +33,9 @@
 //Sensoris includes
 #include <microsim/devices/sensoris/sensoris.pb.h>
 
+// SQLite3 include
+//#include <sqlite3.h>
+
 //Structure containing PositionEstimate information
 
 struct posInfo {
@@ -182,6 +185,7 @@ private:
     //  posInfo lastPos = NULL;
     std::list<posInfo> positions;
     posInfo lastPos;
+//    sqlite3* _db;
 
 private:
     /// @brief Invalidated copy constructor.

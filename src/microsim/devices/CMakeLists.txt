@@ -1,5 +1,8 @@
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
+
 find_package(Protobuf REQUIRED)
 PROTOBUF_GENERATE_CPP(PROTO_H PROTO_SRC sensoris.proto)
+find_package(Sqlite REQUIRED)
 
 set(microsim_devices_STAT_SRCS
    MSDevice.cpp
@@ -45,5 +48,5 @@ set(microsim_devices_STAT_SRCS
 )
 
 add_library(microsim_devices STATIC ${microsim_devices_STAT_SRCS})
-target_link_libraries(microsim_devices ${PROTOBUF_LIBRARIES})
+target_link_libraries(microsim_devices ${PROTOBUF_LIBRARIES} Sqlite)
 set_property(TARGET microsim_devices PROPERTY PROJECT_LABEL "z_microsim_devices")
